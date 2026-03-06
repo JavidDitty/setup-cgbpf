@@ -1,0 +1,8 @@
+#!/bin/bash
+
+CGBPF_FILTER=$1
+CGBPF_FILTER_LEN=${#CGBPF_FILTER}
+CGBPF_OUT=$2
+
+bpftrace -q cgbpf.bt "$CGBPF_FILTER" "$CGBPF_FILTER_LEN" > "$CGBPF_OUT"
+chmod 777 "$CGBPF_OUT"

@@ -1,0 +1,95 @@
+name: "Setup CG-BPF"
+description: "Set up your GitHub Actions job for CG-BPF."
+author: "Javid Ditty"
+branding:
+  icon: "eye"
+  color: "orange"
+runs:
+  using: "composite"
+  steps:
+    - name: Set Environmental Variables
+      if: ${{ runner.os == 'Linux' }}
+      shell: bash
+      run: |
+        CGBPF_ARTIFACT_NAME="$(date +%s%N)-cgbpf_logs"
+        echo "CGBPF_ARTIFACT_NAME=$CGBPF_ARTIFACT_NAME" >> $GITHUB_ENV
+
+        CGBPF_BASH=/home/runner/cgbpf/bin/bash
+        echo "CGBPF_BASH=$CGBPF_BASH" >> $GITHUB_ENV
+
+        CGBPF_BIN=/home/runner/cgbpf/bin
+        echo "CGBPF_BIN=$CGBPF_BIN" >> $GITHUB_ENV
+        mkdir -p $CGBPF_BIN
+
+        CGBPF_LOGS=/home/runner/cgbpf/log
+        echo "CGBPF_LOGS=$CGBPF_LOGS" >> $GITHUB_ENV
+        mkdir -p $CGBPF_LOGS
+
+        CGBPF_PYFUNCTIONS=${{ github.action_path }}/bin/pyfunctions
+        echo "CGBPF_PYFUNCTIONS=$CGBPF_PYFUNCTIONS" >> $GITHUB_ENV
+
+        CGBPF_START=${{ github.action_path }}/tools/cgbpf.sh
+        echo "CGBPF_START=$CGBPF_START" >> $GITHUB_ENV
+
+    - name: Log Python Functions
+      if: ${{ runner.os == 'Linux' }}
+      shell: bash
+      run: |
+        ${{ env.CGBPF_PYFUNCTIONS }} -o ${{ env.CGBPF_LOGS }} ${{ github.workspace }}
+
+    - name: Write Bash Wrappers
+      if: ${{ runner.os == 'Linux' }}
+      shell: bash
+      run: |
+        # Write the bash wrapper
+        cat << 'WRAPPER_EOF' > ${{ env.CGBPF_BASH }}
+        #!/bin/bash
+        if [[ -z "${CGBPF_IS_TRACING_BASH}" ]]; then
+          # Set tracer indicator
+          export CGBPF_IS_TRACING_BASH=true
+          echo "CGBPF_IS_TRACING_BASH=$CGBPF_IS_TRACING_BASH" >> $GITHUB_ENV
+
+          # Define the log paths
+          timestamp=$(date +%s%N)
+          cgbpf_log=$CGBPF_LOGS/$timestamp.cgbpf.csv
+
+          # Start snooping tools and pipe their outputs to their logs
+          sudo bash "${{ env.CGBPF_START }}" "${{ github.workspace }}" "$cgbpf_log" &
+
+          # (Re-)Apply the wrapper(s)
+          export PATH="${{ env.CGBPF_BIN }}:$PATH"
+          echo ${{ env.CGBPF_BIN }} >> $GITHUB_PATH
+
+          # Start the bash script
+          echo "start_time = $(date +%s)" >> $metadata_log
+          /bin/bash "$@"
+          echo "end_time = $(date +%s)" >> $metadata_log
+
+          # (Re-)Apply the wrapper(s)
+          export PATH="${{ env.CGBPF_BIN }}:$PATH"
+          echo ${{ env.CGBPF_BIN }} >> $GITHUB_PATH
+
+          # Unset tracer indicator
+          unset CGBPF_IS_TRACING_BASH
+          echo "CGBPF_IS_TRACING_BASH=" >> $GITHUB_ENV
+        else
+          # (Re-)Apply the wrapper(s)
+          export PATH="${{ env.CGBPF_BIN }}:$PATH"
+          echo ${{ env.CGBPF_BIN }} >> $GITHUB_PATH
+
+          # Start the bash script
+          /bin/bash "$@"
+
+          # (Re-)Apply the wrapper(s)
+          export PATH="${{ env.CGBPF_BIN }}:$PATH"
+          echo ${{ env.CGBPF_BIN }} >> $GITHUB_PATH
+        fi
+        WRAPPER_EOF
+        chmod +x ${{ env.CGBPF_BASH }}
+
+    - name: Apply Wrappers
+      if: ${{ runner.os == 'Linux' }}
+      shell: bash
+      run: |
+        export PATH="${{ env.CGBPF_BIN }}:$PATH"
+        echo ${{ env.CGBPF_BIN }} >> $GITHUB_PATH

@@ -1,0 +1,12 @@
+BEGIN
+{
+    printf("\"probe\",\"pid\",\"tid\",\"filename\",\"funcname\",\"lineno\"\n");
+}
+
+usdt:*:python:function__entry,
+usdt:*:python:function__return
+/strncmp(str(arg0), str($1), $2) == 0 && strncmp(str(arg1), "<", 1) != 0/
+{
+    $filename = arg0 + $2;
+    printf("\"%s\",\"%d\",\"%d\",\"%s\",\"%s\",\"%d\"\n", probe, pid, tid, str($filename), str(arg1), arg2);
+}
