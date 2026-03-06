@@ -61,9 +61,7 @@ runs:
           echo ${{ env.CGBPF_BIN }} >> $GITHUB_PATH
 
           # Start the bash script
-          echo "start_time = $(date +%s)" >> $metadata_log
           /bin/bash "$@"
-          echo "end_time = $(date +%s)" >> $metadata_log
 
           # (Re-)Apply the wrapper(s)
           export PATH="${{ env.CGBPF_BIN }}:$PATH"
