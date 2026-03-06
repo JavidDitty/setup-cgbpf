@@ -55,6 +55,7 @@ runs:
 
           # Start snooping tools and pipe their outputs to their logs
           sudo bash "${{ env.CGBPF_START }}" "${{ github.workspace }}" "$cgbpf_log" &
+          sleep 10
 
           # (Re-)Apply the wrapper(s)
           export PATH="${{ env.CGBPF_BIN }}:$PATH"
