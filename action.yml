@@ -31,6 +31,9 @@ runs:
         CGBPF_START=${{ github.action_path }}/tools/cgbpf.sh
         echo "CGBPF_START=$CGBPF_START" >> $GITHUB_ENV
 
+        CGBPF_START_BT=${{ github.action_path }}/tools/cgbpf.bt
+        echo "CGBPF_START_BT=$CGBPF_START_BT" >> $GITHUB_ENV
+
     - name: Log Python Functions
       if: ${{ runner.os == 'Linux' }}
       shell: bash
@@ -54,7 +57,7 @@ runs:
           cgbpf_log=$CGBPF_LOGS/$timestamp.cgbpf.csv
 
           # Start snooping tools and pipe their outputs to their logs
-          sudo bash "${{ env.CGBPF_START }}" "${{ github.workspace }}" "$cgbpf_log" &
+          sudo --preserve-env=CGBPF_START_BT bash "${{ env.CGBPF_START }}" "${{ github.workspace }}" "$cgbpf_log" &
           sleep 10
 
           # (Re-)Apply the wrapper(s)
