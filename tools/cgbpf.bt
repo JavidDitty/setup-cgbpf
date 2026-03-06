@@ -3,8 +3,8 @@ BEGIN
     printf("\"probe\",\"pid\",\"tid\",\"filename\",\"funcname\",\"lineno\"\n");
 }
 
-usdt:*:python:function__entry,
-usdt:*:python:function__return
+usdt:/opt/hostedtoolcache/Python/3.10.19/x64/bin/python3:python:function__entry,
+usdt:/opt/hostedtoolcache/Python/3.10.19/x64/bin/python3:python:function__return
 /strncmp(str(arg0), str($1), $2) == 0 && strncmp(str(arg1), "<", 1) != 0/
 {
     $filename = arg0 + $2;
